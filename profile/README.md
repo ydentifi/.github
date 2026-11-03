@@ -20,6 +20,7 @@
   <img src="https://img.shields.io/badge/push-no%20Apple%20or%20Google-1BA1C0?style=flat-square" alt="No Apple or Google push">
   <img src="https://img.shields.io/badge/SDKs-Apache%202.0-1BA1C0?style=flat-square" alt="SDKs under the Apache License 2.0">
 </p>
+
 > **General availability: 01/01/2027.** The SDKs, the mobile applications and licenses are available from
 > that date. A live demonstration of the full ceremony is available at [ydentifi.io/demo](https://ydentifi.io/demo/).
 
@@ -183,6 +184,12 @@ with make_client() as client:
 
 - **Go** · github.com/ydentifi/go · at launch
 - **Python** · ydentifi · PyPI · at launch
+- **TypeScript** · @ydentifi/client · npm · at launch
+- **Java** · com.ydentifi:client · Maven Central · at launch
+- **.NET** · Ydentifi.Client · NuGet · at launch
+- **Rust** · ydentifi · crates.io · at launch
+- **Ruby** · ydentifi · RubyGems · at launch
+- **PHP** · ydentifi/client · Packagist · at launch
 
 **Your app becomes the authenticator.** Embed enrollment, hardware-backed signing, and the approval UI directly in your own iOS or Android app, instead of sending users to the standalone Ydentifi app.
 
