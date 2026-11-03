@@ -50,7 +50,7 @@ Every authentication and every approval follows the same shape. No personal data
 </p>
 
 - **01 · Enroll: Bind the device.** Once per device, a single-use invite ties the user’s device to their opaque identity.
-- **02 · Challenge: Ask for proof.** When your product hits a sensitive action, your server asks Ydentifi for a challenge carrying the exact on-screen details of that action.
+- **02 · Challenge: Ask for proof.** When a user starts a sensitive action, your server asks Ydentifi for a challenge carrying the exact on-screen details of that action.
 - **03 · Sign: Approve on device.** The enrolled device shows those details and signs them with keys that never leave the phone.
 - **04 · Verify: Check the signature.** Ydentifi checks the signature against the key the device enrolled with and streams your server the outcome.
 
@@ -58,16 +58,16 @@ Details: [The ceremony](https://ydentifi.io/docs/ceremony).
 
 ## Security
 
-- **Hardware-bound keys.** The classical signing key lives in the phone's secure hardware. The post-quantum key sits in encrypted storage tied to that one device. Neither key leaves the phone or can be restored onto another one.
+- **Hardware-bound keys.** Every approval is signed with a classical and a post-quantum key, both generated on the phone and never exported. On iPhone, both keys are held in the Secure Enclave. On Android, the classical key is held in the hardware-backed keystore. The post-quantum key is held there as well where the device supports ML-DSA (Android 17 and later), and otherwise in software, encrypted under a key in the hardware-backed keystore. Neither key can be restored onto another device.
 - **[Phishing-resistant approvals](https://ydentifi.io/docs/background/transaction-signing).** The phone signs the exact details it shows. A spoofed or relayed request cannot change the amount, the payee or the action without the signature failing, and a used approval cannot be replayed.
-- **[Post-quantum-ready cryptography](https://ydentifi.io/docs/background/post-quantum-mfa).** Signatures pair Ed25519/P-256 with ML-DSA-65 — the scheme NIST standardized as FIPS 204 — and TLS uses a hybrid key exchange, safe against advancing quantum computers and aligned with the EU's emerging guidance on post-quantum migration.
+- **[Post-quantum-ready cryptography](https://ydentifi.io/docs/background/post-quantum-mfa).** Signatures pair Ed25519/P-256 with ML-DSA-65 — the scheme NIST standardized as FIPS 204 — and TLS uses a hybrid key exchange, designed to resist attack by future quantum computers, in line with EU guidance on post-quantum migration.
 - **Hardware attestation.** The phone proves it is a genuine device running the genuine app, through the platform's own attestation. Every approval also carries the level of check the phone performed — device unlock or biometric — signed into the response. The deployment refuses any approval below the level you asked for.
 
 The [Security model](https://ydentifi.io/docs/security-model) sets out what Ydentifi defends against and what it does not.
 
 ## Verification levels
 
-A signed response carries one of **two levels**: the user unlocked the device, or the user passed a biometric check with no passcode fallback. **Location**, **number matching** and **codes** are separate dimensions, chosen independently — not stronger levels. You request what an action needs **per call**; the server enforces it, and a device that cannot meet it is denied rather than silently downgraded.
+A signed response carries one of **2 levels**: the user unlocked the device, or the user passed a biometric check with no passcode fallback. **Location**, **number matching** and **codes** are separate dimensions, chosen independently — not stronger levels. You request what an action needs **per call**; the server enforces it, and a device that cannot meet it is denied rather than silently downgraded.
 
 - **Level 1:** Device unlock
 - **Level 2:** Biometric only
@@ -83,7 +83,7 @@ Details: [Factors & levels](https://ydentifi.io/docs/factors).
 - Subscriptions
 - Locking & unlocking physical & digital assets
 - Launching deployments or critical engineering processes
-- Anything else you care about
+- Any other action that requires explicit approval
 
 ## Code example
 
@@ -166,7 +166,7 @@ with make_client() as client:
 
 ## Integration
 
-- **Partial: A step-up where it matters.** Drop a single ceremony in front of your highest-stakes actions — a signed approval before a transfer, a deployment, an unlock — and leave the rest of your login exactly as it is.
+- **Partial: A step-up where it matters.** Add a single ceremony before the highest-risk actions — a signed approval before a transfer, a deployment, an unlock — and leave the rest of the login unchanged.
 - **Full: Your whole second factor.** Make Ydentifi the second factor across your product, from enrollment through every sensitive action, with the tier chosen per action by your own policy.
 
 ## Getting started
@@ -191,7 +191,7 @@ with make_client() as client:
 - **Ruby** · ydentifi · RubyGems · at launch
 - **PHP** · ydentifi/client · Packagist · at launch
 
-**Your app becomes the authenticator.** Embed enrollment, hardware-backed signing, and the approval UI directly in your own iOS or Android app, instead of sending users to the standalone Ydentifi app.
+**The authenticator inside your app.** Embed enrollment, hardware-backed signing, and the approval UI directly in your own iOS or Android app, instead of sending users to the standalone Ydentifi app.
 
 - **iOS — Swift** · Swift Package Manager · [guide](https://ydentifi.io/docs/swift) · at launch
 - **Android — Kotlin** · Maven Central · [guide](https://ydentifi.io/docs/kotlin) · at launch
