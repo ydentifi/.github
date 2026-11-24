@@ -178,51 +178,66 @@ Details: [Factors & levels](https://ydentifi.io/docs/factors).
 
 ## Code example
 
-Taken from the Go SDK's examples. `newExampleClient` stands for the client configuration; every method is
-documented in the [API reference](https://ydentifi.io/docs/api).
+Taken from the Go SDK's examples, which read the client's configuration from the `YDFI_*` environment;
+every method is documented in the [API reference](https://ydentifi.io/docs/api).
 
 ```go
-client := newExampleClient()
+client, err := ydentifi.New()
+if err != nil {
+	log.Fatal(err)
+}
 defer client.Close()
 
-const opaqueID = "a3f1...0b9e"
+ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+defer cancel()
 
-ch, err := client.IssueAuthChallenge(context.Background(), ydentifi.IssueAuthChallengeRequest{
+const opaqueID = "8b2c4f1e9d7a6b5c3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4f3a2b1c0d"
+
+ch, err := client.IssueAuthChallenge(ctx, ydentifi.IssueAuthChallengeRequest{
 	OpaqueID:    opaqueID,
-	Context:     []byte("Authorize wire transfer of €1,000"),
+	Context:     []byte("Transfer of 1,000 EUR to ACME Corp"),
 	MinStrength: ydentifi.AuthStrengthBiometric,
 })
 if err != nil {
 	log.Fatal(err)
 }
 
-ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
-defer cancel()
+// The server ends the wait about 5 seconds after the challenge
+// expires; a deadline bounds it as well.
+wait, stop := context.WithTimeout(context.Background(), 90*time.Second)
+defer stop()
 
-result, err := client.AwaitChallenge(ctx, ch.ChallengeID)
-if err != nil {
-	log.Fatal(err)
-}
-
-switch result.Status {
-case ydentifi.ChallengeStatusApproved:
-	fmt.Println("approved — proceed with the transfer")
-case ydentifi.ChallengeStatusDenied:
-	fmt.Println("denied — reason:", result.DeclineReason)
-case ydentifi.ChallengeStatusExpired:
-	fmt.Println("challenge expired — issue a new one")
-default:
-	fmt.Println("unexpected status:", result.Status)
+for frame, err := range client.AwaitChallenge(wait, ch.ChallengeID) {
+	if err != nil {
+		log.Fatal(err)
+	}
+	if !frame.Status.IsTerminal() {
+		continue // Pending or Delivered
+	}
+	switch frame.Status {
+	case ydentifi.ChallengeStatusApproved:
+		fmt.Println("approved")
+	case ydentifi.ChallengeStatusDenied:
+		// DeclineReasonNotMe reports an attempt the user did not make.
+		fmt.Println("denied:", frame.DeclineReason)
+	case ydentifi.ChallengeStatusRejected:
+		// The user approved and a check refused the approval; this is
+		// not a decline.
+		fmt.Println("rejected:", frame.VerificationFailure)
+	default:
+		fmt.Println("ended:", frame.Status)
+	}
 }
 ```
 
 <details>
 <summary><b>The same example in Python</b></summary>
 
-Taken from the Python SDK's examples. `make_client` stands for the client configuration.
+Taken from the Python SDK's examples. `make_client` stands for the client configuration, and `args` for the
+example's command-line arguments.
 
 ```python
-opaque_id = "a3f1...0b9e"
+(opaque_id,) = args("opaque_id")
 with make_client() as client:
     challenge = client.issue_auth_challenge(
         ydentifi.IssueAuthChallengeRequest(
@@ -231,24 +246,24 @@ with make_client() as client:
             min_strength=ydentifi.AuthStrength.BIOMETRIC,
         ),
     )
-    result = client.await_challenge(challenge.challenge_id)
+    # The timeout leaves time for the user to answer.
+    with contextlib.closing(
+        client.await_challenge(challenge.challenge_id, timeout=90)
+    ) as frames:
+        result = next(f for f in frames if f.status in _ENDED)
     if result.status == ydentifi.ChallengeStatus.APPROVED:
         print("approved - proceed with the transfer")
     elif result.status == ydentifi.ChallengeStatus.DENIED:
-        # The user refused. Their own reason, worth recording as
-        # such: NOT_ME is somebody reporting an attempt they did
-        # not make.
+        # The user declined. NOT_ME reports an attempt the user did not initiate.
         print(f"the user declined - reason: {result.decline_reason.name}")
     elif result.status == ydentifi.ChallengeStatus.REJECTED:
-        # The user AGREED and a check refused it. Do not record
-        # this as the user declining — they did not.
-        #
-        # WRONG_MATCH_CODE is the one to act on: a user approving
-        # a number that was not on their screen is what an approval
-        # driven from somebody else's session looks like.
+        # User approval failed verification and must not be recorded as a decline.
+        # WRONG_MATCH_CODE may indicate a request from another session.
         print(f"a check refused it: {result.verification_failure.name}")
     elif result.status == ydentifi.ChallengeStatus.EXPIRED:
         print("challenge expired - issue a new one")
+    elif result.status == ydentifi.ChallengeStatus.DISMISSED:
+        print("the user dismissed it without answering - ask again")
     else:
         print(f"unexpected status: {result.status.name}")
 ```
@@ -273,8 +288,8 @@ with make_client() as client:
 
 **Your server talks to the deployment.** An idiomatic library over the relying-party gRPC surface — create users, issue challenges, verify approvals, manage devices. This is what your application backend calls.
 
-- **Go** · github.com/ydentifi/go · at launch
-- **Python** · ydentifi · PyPI · at launch
+- **Go** · github.com/ydentifi/go · [source](https://github.com/ydentifi/go)
+- **Python** · ydentifi · PyPI · [source](https://github.com/ydentifi/python)
 - **TypeScript** · @ydentifi/client · npm · at launch
 - **Java** · com.ydentifi:client · Maven Central · at launch
 - **.NET** · Ydentifi.Client · NuGet · at launch
