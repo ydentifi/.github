@@ -21,8 +21,9 @@
   <img src="https://img.shields.io/badge/SDKs-Apache%202.0-1BA1C0?style=flat-square" alt="SDKs under the Apache License 2.0">
 </p>
 
-> **General availability: 01/01/2027.** The SDKs, the mobile applications and licenses are available from
-> that date. A live demonstration of the full ceremony is available at [ydentifi.io/demo](https://ydentifi.io/demo/).
+> **General availability: 01/01/2027.** The Go and Python SDKs are published now; the other SDKs, the
+> mobile applications and licenses are available from that date. A live demonstration of the full ceremony is
+> available at [ydentifi.io/demo](https://ydentifi.io/demo/).
 
 **Ydentifi is self-hosted multi-factor authentication and action authorization.** Need multi-factor authentication, or cryptographic proof of **who approved what**, without giving up data sovereignty or starting a multi-month project? Add it **in a day** and keep **100% control**, on your own terms.
 
@@ -68,7 +69,7 @@
 
 - **A server image.** A Docker container and a PostgreSQL database — that is the whole deployment. Run it on a single host, or put an L4 load balancer in front only when you want high availability.
 - **A CLI.** One command-line tool — pull and run, like the server — to provision, deploy, operate, and simulate the entire system. The CLI is the product surface.
-- **SDKs in 8 languages.** Go, Python, TypeScript, Java, .NET, Rust, Ruby and PHP, published at launch — or call the **gRPC API** directly. Plus native **Swift** and **Kotlin** SDKs to build the ceremony into your own app.
+- **SDKs in 8 languages.** Go and Python are published; TypeScript, Java, .NET, Rust, Ruby and PHP are published at launch, as is the **gRPC API** for calling directly. Plus native **Swift** and **Kotlin** SDKs to build the ceremony into your own app.
 - **The authenticator app.** The one Ydentifi authenticator your users install — on the App Store and Google Play at launch, and no per-customer app to build or ship. It stays a blank shell until a user links it to your deployment by QR.
 
 ## How it works
@@ -191,6 +192,7 @@ defer client.Close()
 ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 defer cancel()
 
+// The opaque ID CreateUser returned for a user who has enrolled a phone.
 const opaqueID = "8b2c4f1e9d7a6b5c3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4f3a2b1c0d"
 
 ch, err := client.IssueAuthChallenge(ctx, ydentifi.IssueAuthChallengeRequest{
